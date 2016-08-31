@@ -75,7 +75,8 @@ N = 500; % define sequence length
 %% problem 4. starting with image data:
 
 %download this zstack of a fly embryo with all the cell membranes marked:
-%https://www.dropbox.com/s/atq9j35gtq6jcov/Screenshot%202016-08-25%2013.40.53.png?dl=0
+%https://www.dropbox.com/sh/21cfmo2qdr9azf2/AADyZki33TaeqPyJ6uS2auIda?dl=0
+
 
 % part 1. each image can be read in with the imread command e.g. img =
 % imread('z1.tif'); will store the data in img for the first image. 
