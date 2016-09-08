@@ -40,8 +40,8 @@ N = 500; % define sequence length
 % ORF > 50 b.p. as a funciton of the sequence length. 
 
 %part 5: Make sure your results from part 4 are sensible. What features
-% must this curve have (hint: what should be the value when is small or when
-% N is very large? how should the curve change in between.) Make sure your
+% must this curve have (hint: what should be the value when N is small or when
+% N is very large? how should the curve change in between?) Make sure your
 % plot looks like this. 
 
 %% problem 3 data input/output and simple analysis
@@ -68,7 +68,7 @@ N = 500; % define sequence length
 % genes, compute their normalized expression in all  conditions, normalized to condition 1. 
 % In other words, the fold change between these conditions and condition 1. The
 % formula for this is 2^[Cp0 - CpX - (CpN0 - CpNX)] where Cp0 is the Cp for
-% the gene in the 1st condition, CpX is the value of Cp in condition and
+% the gene in the 1st condition, CpX is the value of Cp in condition X and
 % CpN0 and CpNX are the same quantitites for the normalization gene.
 % Plot this data in an appropriate way. 
 
@@ -88,5 +88,26 @@ N = 500; % define sequence length
 % part 2. write a loop that reads all the images and writes them as a
 % single 3D image. hint: see the function imwrite and its option 'append' 
 %
+
+%% Challenge problems that extend the above (optional)
+
+% 1. Write a solution to Problem 2 part 2 that doesn't use any loops at
+% all. Hint: start by using the built in function bsxfun to make a matrix of all distances
+% between start and stop codons. 
+
+% 2. Problem 2, part 4. Use Matlab to compute the exact solution to this
+% problem and compare your answer to what you got previously by testing
+% many sequences. Plot both on the same set of axes. Hint: to get started 
+% think about the following:
+% A. How many sequences of length N are there?
+% B. How many ways of making an ORF of length N_ORF are there?
+% C. For each N_ORF how many ways of position this reading frame in a
+% sequence of length N are there?
+
+% 3. Problem 3. Assume that the error in each Cp is the standard deviation
+% of the three measurements. Add a section to your code that propogates this
+% uncertainty to the final results. Add error bars to your plot. (on
+% propagation of error, see, for example:
+% https://en.wikipedia.org/wiki/Propagation_of_uncertainty
 
 
