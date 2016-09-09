@@ -131,12 +131,14 @@ display(['Probability of finding an ORF longer than 50bp: ' num2str(prob)]);
 %part 4: copy your code from part 3 but put it inside yet another loop,
 % this time over the sequence length N. Plot the probability of having an
 % ORF > 50 b.p. as a funciton of the sequence length.
-
-seq_num = 1;
 sequence_lengths = 0:50:1000;
+nseq = length(sequence_lengths);
 
-for N = sequence_lengths
+prob = zeros(nseq,1);
+for kk = 1:nseq
     
+    N = sequence_lengths(kk);
+
     counter = 0; % counter increases by 1 if an ORF is found.
     
     for tt = 1:10000
@@ -181,8 +183,7 @@ for N = sequence_lengths
     end
     
     
-    prob(seq_num) =  counter/1e4 ;
-    seq_num = seq_num +1;
+    prob(kk) =  counter/1e4 ;
 end
 
 figure;
@@ -327,7 +328,7 @@ ax.FontSize = 16;
 totalimages = 384; % number of '.tif' files in the folder flydata.
 
 for ii = 1:totalimages %loop over all files
-    image_name = ['z' int2str(ii) '.tif']; % name of the file.
+    image_name = ['flyData/z' int2str(ii) '.tif']; % name of the file.
     %You can also use an alternate command: image_name = sprintf('z%d.tif', ii). 
     %The function sprintf replaces the value of ii in the place of %d in the string 'z%d.tif' . 
     %If ii = 1, the output will be z1.tif.
@@ -350,7 +351,7 @@ end
 new3dfile_name = 'max_img_3d.tif'; % name of the new file.
 
 for ii = 1:totalimages
-    image_name = ['z' int2str(ii) '.tif'];
+    image_name = ['flyData/z' int2str(ii) '.tif'];
     im1 = imread(image_name);
     
     if(ii==1)
@@ -359,3 +360,153 @@ for ii = 1:totalimages
         imwrite(im1, new3dfile_name, 'WriteMode', 'append'); % appends every subsequent image to the new file
     end
 end
+%%
+% HW1 challenge problems
+
+% 1. Write a solution to Problem 2 part 2 that doesn't use any loops at
+% all. Hint: start by using the built in function bsxfun to make a matrix of all distances
+% between start and stop codons. 
+
+
+N = 500;
+
+dnaletters = ['A' 'T' 'G' 'C'];
+rand_seq = dnaletters(randi(4,1,N));
+
+startcodon_pos = strfind(rand_seq, 'ATG');
+stopcodon_pos = [strfind(rand_seq, 'TAA') strfind(rand_seq, 'TGA') strfind(rand_seq, 'TAG')];
+
+found = 0; % variable used to check if any ORF is found in the sequence. 
+
+if (~isempty(startcodon_pos) && ~isempty(stopcodon_pos))
+    orflength = bsxfun(@minus, stopcodon_pos, startcodon_pos');
+    % orflength is a matrix with lengths of all dna sequences starting with start codon and ending with stop codon.
+    % number of rows  in orflength is the same as number of start_codons, number of columns equals the number of stop codons.
+    
+    condition1 = orflength > 0; % ensures stop codon is after start codon
+    condition2 = mod(orflength,3) == 0; % ensures that the start and stop codons are in frame
+    
+    orflength(~(condition1&condition2)) = 0; % assigns zero values for  orfs that do not satisfy the above two conditions
+    
+    if(sum(sum(orflength)) > 0) % checks if any orf is found
+        orflength(orflength==0) = NaN; % filters out zero values.
+        [allorfs_length, allorfs_stop] = min(orflength, [], 2); % finds the length and stop codon position of the first in frame orf for each start codon.
+        orfstart = find(allorfs_length == max(allorfs_length)); % finds start codon corresponding to longest in frame orf.
+        orfstop = allorfs_stop(orfstart); % gives stop codon corresponding to longest in frame orf.
+        found = 1;
+        
+             
+    end
+end
+
+
+if(found ==0)
+    display('No ORF found');
+else
+    orf_sequence = rand_seq(startcodon_pos(orfstart): stopcodon_pos(orfstop)+2); % gives the sequence of the orf.
+    orf_length = length(orf_sequence);
+    
+    
+    display(['Longest ORF found:', orf_sequence]);
+    display(['Length:', int2str(orf_length)]);
+       
+end
+
+%%
+
+% 2. Problem 2, part 4. Use Matlab to compute the exact solution to this
+% problem and compare your answer to what you got previously by testing
+% many sequences. Plot both on the same set of axes. Hint: to get started 
+% think about the following:
+% A. How many sequences of length N are there?
+% B. How many ways of making an ORF of length N_ORF are there?
+% C. For each N_ORF how many ways of position this reading frame in a
+% sequence of length N are there?
+
+% Solution: the code pORF.m in this folder contains the function
+% pORF(N_Seq,N_ORF) computes the likelihood that a sequence of legnth N_Seq
+% contains an ORF of length at least N_ORF. This calls that function for a
+% number of different sequence lengths:
+sequence_lengths = 0:50:1000;
+nseq = length(sequence_lengths);
+prExact = zeros(nseq,1);
+for jj=1:nseq
+    prExact(jj) =pORF(sequence_lengths(jj),50);
+end
+
+%above the approximate solution by testing repeated sequences is stored in 
+%the variable prob. This compares the two. 
+
+% make a plot to compare the 2:
+figure; hold on;
+plot(sequence_lengths,prExact,'k-','LineWidth',3);
+plot(sequence_lengths,prob,'rs','MarkerSize',18);
+xlabel('Sequence Length','FontSize',24);
+ylabel('Probability','FontSize',24);
+legend({'Exact Solution','Testing sequences'},'FontSize',18);
+
+%%
+% 3. Problem 3. Assume that the error in each Cp is the standard deviation
+% of the three measurements. Add a section to your code that propogates this
+% uncertainty to the final results. Add error bars to your plot. (on
+% propagation of error, see, for example:
+% https://en.wikipedia.org/wiki/Propagation_of_uncertainty
+
+fold_change_error = zeros(3,5); % A matrix to store the error in the fold change of genes in 5 conditions.
+gene_number = 1;
+
+% calculating fold_change error.
+
+% std(F)/F = log(2)*sqrt[(std(Cp0)/Cp0)^2 + (std(CpX)/CpX)^2) + (std(CpN0)/CpN0)^2 + (std(CpNX)/CpNX)^2].
+% Error in fold change is represented as its std deviation - std(F).
+% Since fold change in each gene in each condition is the function of Cp
+% values of that gene and the normalisation gene in condition 1, the error
+% in fold change will take into account the standard deviation in each of
+% these four values. 
+data = platedata;
+for i = 1:3:9 %column numbers corresponding to different genes in the variable data.
+    for j = 2:6 % 
+        
+        Cp0 = mean(data(1,i:i+2)); % taking mean across gene triplicates to get the Cp value of gene i in condition
+        std0 = std(data(1,i:i+2)); % taking std deviation across gene triplicates. 
+        
+        CpX = mean(data(j,i:i+2));
+        stdX = std(data(j,i:i+2));
+        
+        CpN0 = mean(data(1, 10:12));
+        stdN0 = std(data(1,10:12));
+        
+        CpNX = mean(data(j, 10:12));
+        stdNX = std(data(j,10:12));
+        
+        all_reqvalues = [std0 stdX stdN0 stdNX]; %this variable defined just to make calculation in next step less clumsy.
+ 
+        fold_change_error(gene_number, j-1) = log(2)*fold_change(gene_number, j-1)*sqrt(sum(all_reqvalues.^2));
+    end
+    
+    gene_number = gene_number + 1;
+end
+        
+% Make the plot
+figure;
+h = bar(fold_change);
+hold on;
+
+%errorbar makes the plot. Notice the use of the XOffset property in the bar
+%plot to get the errorbars to line up correctly. 
+for i = 1:5
+    hold on;
+    errorbar((1:3) + h(i).XOffset, (fold_change(:,i))', (fold_change_error(:,i))', 'k.');
+end
+
+ylabel('Fold Change');
+
+label = [{'Condition 1'}, {'Condition 2'}, {'Condition 3'}, {'Condition 4'}, {'Condition 5'}];
+legend(label);
+
+ax = gca;
+ax.XTickLabel = [{'Gene 1'}, {'Gene 2'}, {'Gene 3'}];
+ax.FontSize = 16;
+
+
+
